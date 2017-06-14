@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="getProjectById"><![CDATA[
+        select
+            p.id/*<!id!>*/,
+            p.name/*<!name!>*/
+        from dao.Project p
+        where p.id = :projId
+    ]]></entry>
+    <entry key="getProjectsByEmplId"><![CDATA[
+        select
+            p.id/*<!id!>*/,
+            p.name/*<!name!>*/
+        from dao.EmployeeProjects ep
+        inner join dao.Project p
+            on p.id = ep.project_id
+        inner join dao.Employee e
+            on e.id = ep.employee_id
+        where e.id = :emplId
+    ]]></entry>
+    <entry key="mergeProject"><![CDATA[
+        select
+            id/*RES:<id><><OUTPUT>*/,
+            name/*RES:<name><><INPUT>*/
+        from dao.Project
+        where id = ?/*COND:<id><>*/
+    ]]></entry>
+    <entry key="assignEmployee"><![CDATA[
+        select
+            employee_id/*RES:<id><><INPUT>*/,
+            project_id/*RES:<><norm.dao.Persist:getLastEntityId><INPUT>*/
+        from dao.EmployeeProjects
+        where employee_id = ?/*COND:<id><>*/
+            and project_id = ?/*COND:<><norm.dao.Persist:getLastEntityId>*/
+    ]]></entry>
+</properties>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration PUBLIC "-//APACHE//DTD LOG4J 1.2//EN" "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="true">
+    <appender name="ASYNC" class="org.apache.log4j.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="CONSOLE"/>
+    </appender>
+    <appender name="FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="dao-framework.log"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- <param name="ConversionPattern" value="%d{MM/dd HH:mm:ss.SSS}\t%-5p\t[%c]\t[%t]\t%m%n"/> Use on production -->
+            <param name="ConversionPattern" value="%d{MM/dd HH:mm:ss.SSS}\t%-5p\t[%c::%M]\t[%t]\t%m%n"/> <!-- DO NOT use on production -->
+        </layout>
+    </appender>
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- <param name="ConversionPattern" value="%d{MM/dd HH:mm:ss.SSS}\t%-5p\t[%c]\t[%t]\t%m%n"/> Use on production -->
+            <param name="ConversionPattern" value="%d{MM/dd HH:mm:ss.SSS}\t%-5p\t[%c::%M]\t[%t]\t%m%n"/> <!-- DO NOT use on production -->
+        </layout>
+    </appender>
+
+    <root>
+        <priority value="debug"/>
+        <appender-ref ref="ASYNC"/>
+    </root>
+</log4j:configuration>

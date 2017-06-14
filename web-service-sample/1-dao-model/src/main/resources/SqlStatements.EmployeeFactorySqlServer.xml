@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <!--Hypothetically: a small, fast query-->
+    <entry key="getEmployeeSmall"><![CDATA[
+        select
+            e.id/*<!id!>*/,
+            p.name/*<!name!>*/,
+            p.ssn/*<!ssn!>*/,
+            e.title/*<!title!>*/,
+            d.id as department_id/*<!department.id!>*/,
+            d.name as department_name/*<!department.name!>*/
+        from dao.Employee e
+        inner join dao.Person p
+            on p.id = e.person_id
+        inner join dao.Department d
+            on d.id = e.department_id
+    ]]></entry>
+    <entry key="getEmployeeSmallById"><![CDATA[
+        ${getEmployeeSmall}
+        where e.id = :emplId
+    ]]></entry>
+    <!--Hypothetically, a bigger, slower query-->
+    <entry key="getEmployeeLarge"><![CDATA[
+        select
+            e.id/*<!id!>*/,
+            p.name/*<!name!>*/,
+            p.ssn/*<!ssn!>*/,
+            d.id as department_id/*<!department.id!>*/,
+            d.name as department_name/*<!department.name!>*/,
+            e.start_date/*<!startDate!>*/,
+            e.title/*<!title!>*/,
+            (e.__revision + p.__revision) as __revision/*<!__revision!>*/
+        from dao.Employee e
+        inner join dao.Person p
+            on p.id = e.person_id
+        inner join dao.Department d
+            on d.id = e.department_id
+    ]]></entry>
+    <entry key="getEmployeeLargeById"><![CDATA[
+        ${getEmployeeLarge}
+        where e.id = :emplId
+    ]]></entry>
+    <entry key="getEmployeesManagerBulk"><![CDATA[
+        select
+            e.id as employee_id/*<!id!>*/,
+            m.id/*<!manager.id!>*/,
+            mp.name/*<!manager.name!>*/,
+            mp.ssn/*<!manager.ssn!>*/,
+            m.title/*<!manager.title!>*/,
+            md.id as department_id/*<!manager.department.id!>*/,
+            md.name as department_name/*<!manager.department.name!>*/
+        from dao.Employee e
+        inner join dao.Employee m
+            on m.id = e.manager_id
+        inner join dao.Person mp
+            on mp.id = m.person_id
+        inner join dao.Department md
+            on md.id = m.department_id
+        /*conditions here*/
+    ]]></entry>
+    <entry key="getEmployeeManager"><![CDATA[
+        ${getEmployeesManagerBulk}
+        where e.id = :emplId
+    ]]></entry>
+    <entry key="getEmployeesProjectsBulk"><![CDATA[
+        select
+            ep.employee_id/*<!id!>*/,
+            p.id/*<!employeeProjects.id!>*/,
+            p.name/*<!employeeProjects.name!>*/
+        from dao.EmployeeProjects ep
+        inner join dao.Project p
+            on p.id = ep.project_id
+        inner join dao.Employee e
+            on e.id = ep.employee_id
+        /*some condition*/
+    ]]></entry>
+    <entry key="getEmployeeLogsBulk"><![CDATA[
+        select
+            e.id as employee_id/*<!id!>*/,
+            el.employee_id as emplId/*<!employeeLogs.emplId!>*/,
+            el.ts/*<!employeeLogs.timeStamp!>*/,
+            el.description/*<!employeeLogs.description!>*/
+        from dao.EmployeeLog el
+        inner join dao.Employee e
+            on e.id = el.employee_id
+        /*some condition*/
+    ]]></entry>
+    <!--Demonstrate the usage of stored procedures-->
+    <entry key="getEmployeeAndManagerAtOnce"><![CDATA[
+        if 0=1 select
+            null as employee_id/*<!id!>*/,
+			null as name/*<!name!>*/,
+			null as ssn/*<!ssn!>*/,
+			null as department_id/*<!department.id!>*/,
+			null as start_date/*<!startDate!>*/,
+			null as department_name/*<!department.name!>*/,
+			null as title/*<!title!>*/,
+            null as manager_id/*<!manager.id!>*/,
+            null as manager_name/*<!manager.name!>*/,
+            null as manager_ssn/*<!manager.ssn!>*/,
+            null as manager_title/*<!manager.title!>*/,
+            null as manager_department_id/*<!manager.department.id!>*/,
+            null as manager_department_name/*<!manager.department.name!>*/
+        exec sp_getEmployeeAndManagerAtOnce @emplId = :emplId
+    ]]></entry>
+    <!--Update queries:-->
+    <entry key="updatePersonByEmplId"><![CDATA[
+        select
+            p.__revision/*RES:<__revision><><INPUT>*/, -- updating only the Person revision...
+            (p.__revision + e.__revision) as __revision_out/*RES:<__revision><><OUTPUT>*/, -- but getting the complex one
+            p.name/*RES:<name><><INPUT>*/,
+            p.SSN/*RES:<ssn><><INPUT>*/,
+            p.LastMod/*RES:<><norm.dao.Utils:getCurrentTime><INPUT>*/
+        from [dao].[Person] P WITH (XLOCK,ROWLOCK)
+        inner join [dao].[Employee] E WITH(NOLOCK) /*will alleviate deadlock conditions if the same employee is updated from more than one thread, but might cause more than one person to be updated if an employee is being assigned to a new person.*/
+            on E.person_id = P.id
+        where E.id = ?/*COND:<id><>*/
+            and (?/*COND:<__revision><>*/ < 0 or (e.__revision + p.__revision) = ?/*COND:<__revision><>*/)
+     ]]></entry>
+    <entry key="updateEmployeeById"><![CDATA[
+        select
+            __revision/*RES:<__revision><><INPUT>*/,
+            department_id/*RES:<department><norm.dao.poc.dao_model.department.DepartmentDAO:getId><INPUT>*/,
+            title/*RES:<title><><INPUT>*/,
+            manager_id/*RES:<manager><norm.dao.poc.dao_model.employee.EmployeeDAO:getId><INPUT>*/
+        from [dao].[Employee] WITH (XLOCK,ROWLOCK)
+        where id = ?/*COND:<id><>*/
+     ]]></entry>
+    <!--Insert queries:-->
+    <!--Note that this is for illustration. In reality such a situation will be resolved differently.-->
+    <!--Insert a new person only if we don't find another one with matching personal info-->
+    <entry key="mergePersonByEmplIdNameSsn"><![CDATA[
+        select
+            __revision/*RES:<__revision><><INPUT>*/,
+            id/*RES:<><><OUTPUT>*/, -- this column is not mapped to any field
+            name/*RES:<name><><INPUT>*/,
+            SSN/*RES:<ssn><><INPUT>*/,
+            LastMod/*RES:<><norm.dao.Utils:getCurrentTime><INPUT>*/
+        from [dao].[Person] WITH (XLOCK,ROWLOCK)
+        where
+            name = ?/*COND:<name><>*/
+            and SSN = ?/*COND:<ssn><>*/
+     ]]></entry>
+    <entry key="insertEmployee"><![CDATA[
+        select
+            id/*RES:<id><><OUTPUT>*/,
+            person_id/*RES:<><norm.dao.Persist:getLastEntityId><INPUT>*/,
+            department_id/*RES:<department><norm.dao.poc.dao_model.department.DepartmentDAO:getId><INPUT>*/,
+            start_date/*RES:<startDate><><INPUT>*/,
+            end_date/*RES:<endDate><><INPUT>*/,
+            title/*RES:<title><><INPUT>*/,
+            manager_id/*RES:<manager><norm.dao.poc.dao_model.employee.EmployeeDAO:getId><INPUT>*/
+        from [dao].[Employee]
+        where id = -1 /*Definitely invalid id. We don't plan on merging in this case*/
+     ]]></entry>
+    <!--Because of our complex revision and the possible merge from the previous query we have to get the new revision this way:-->
+    <!--Note: this query is not a fetch query! It is part of the persistance queries.-->
+    <entry key="getRevision"><![CDATA[
+        select
+            (p.__revision + e.__revision) as __revision/*RES:<__revision><><OUTPUT>*/
+        from [dao].[Employee] e
+        inner join [dao].[Person] p on e.person_id = p.id
+        where e.id = ?/*COND:<><norm.dao.Persist:getLastEntityId>*/
+     ]]></entry>
+</properties>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="getEmployeeLogs"><![CDATA[
+        select
+            el.employee_id/*<!emplId!>*/,
+            el.ts/*<!timeStamp!>*/,
+            el.description/*<!description!>*/
+        from dao.EmployeeLog el
+        where el.employee_id = :emplId
+    ]]></entry>
+    <entry key="insertEmployeeLog"><![CDATA[
+        select
+            employee_id/*RES:<__parent$id><><INPUT>*/, -- the parent PK field(s) - in this case:[id] - See Persis.java
+            ts/*RES:<timeStamp><><INPUT>*/,
+            description/*RES:<description><><INPUT>*/
+        from dao.EmployeeLog
+        where employee_id = -1
+    ]]></entry>
+</properties>

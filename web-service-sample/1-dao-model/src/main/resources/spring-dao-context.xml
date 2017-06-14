@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                             http://www.springframework.org/schema/beans/spring-beans.xsd
+                             http://www.springframework.org/schema/context
+                             http://www.springframework.org/schema/context/spring-context.xsd
+                             http://www.springframework.org/schema/tx
+                             http://www.springframework.org/schema/tx/spring-tx.xsd
+                             http://www.springframework.org/schema/util
+                             http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <!--<context:property-placeholder location="classpath:dao-model.properties" ignore-unresolvable="true" order="1"/>-->
+    <bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:dao-model.properties</value>
+            </list>
+        </property>
+        <property name="order" value="1"/>
+        <property name="ignoreUnresolvablePlaceholders" value="false"/>
+        <property name="localOverride" value="false"/>
+    </bean>
+
+    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+          p:driverClassName="${jdbc.driverClassName}"
+          p:url="${jdbc.url}"
+          p:username="${jdbc.userName}"
+          p:password="${jdbc.password}"
+          p:maxTotal="${jdbc.maxTotal}"
+          p:maxWaitMillis="${jdbc.maxWaitMillis}"/>
+
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <tx:annotation-driven transaction-manager="txManager"/>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">
+        <constructor-arg ref="dataSource"/>
+    </bean>
+
+    <!--<context:annotation-config />-->
+    <context:component-scan base-package="norm.dao.poc.dao_model" />
+
+    <bean id="initDb" class="norm.dao.InitDB">
+        <constructor-arg ref="jdbcTemplate"/>
+        <constructor-arg type="java.lang.String" value="SqlDbInit.SqlServer.xml"/>
+        <constructor-arg type="java.lang.Integer" value="${initDB.startVersion.major}"/>
+        <constructor-arg type="java.lang.Integer" value="${initDB.startVersion.minor}"/>
+    </bean>
+
+    <bean id="afterTransactionExecutor" class="norm.dao.AfterTransactionExecutor"/>
+
+    <!--Entity Factories-->
+    <bean id="employeeLogFactory" class="norm.dao.poc.dao_model.employeelog.EmployeeLogFactorySqlServer">
+        <constructor-arg type="java.lang.String" value="SqlStatements.EmployeeLogFactorySqlServer.xml"/>
+    </bean>
+
+    <bean id="projectFactory" class="norm.dao.poc.dao_model.project.ProjectFactorySqlServer">
+        <constructor-arg type="java.lang.String" value="SqlStatements.ProjectFactorySqlServer.xml"/>
+    </bean>
+
+    <bean id="employeeProjectsFactory" class="norm.dao.poc.dao_model.project.EmployeeProjectsFactorySqlServer">
+        <constructor-arg type="java.lang.String" value="SqlStatements.ProjectFactorySqlServer.xml"/>
+    </bean>
+
+    <bean id="departmentFactory" class="norm.dao.poc.dao_model.department.DepartmentFactorySqlServer">
+        <constructor-arg type="java.lang.String" value=""/>
+    </bean>
+
+    <bean id="employeeFactorySmall" class="norm.dao.poc.dao_model.employee.EmployeeSmallFactorySqlServer">
+        <constructor-arg type="java.lang.String" value="SqlStatements.EmployeeFactorySqlServer.xml"/>
+    </bean>
+
+    <bean id="employeeFactoryLarge" class="norm.dao.poc.dao_model.employee.EmployeeLargeFactorySqlServer">
+        <constructor-arg type="java.lang.String" value="SqlStatements.EmployeeFactorySqlServer.xml"/>
+    </bean>
+
+    <!-- Use the interface classes instead of the implementation classes. -->
+    <util:map id="factoriesRegistryMap" map-class="java.util.HashMap" key-type="java.lang.Class">
+        <entry key="norm.dao.poc.dao_model.employeelog.EmployeeLogFactory" value-ref = "employeeLogFactory" />
+        <entry key="norm.dao.poc.dao_model.project.ProjectFactory" value-ref = "projectFactory" />
+        <entry key="norm.dao.poc.dao_model.project.EmployeeProjectsFactory" value-ref = "employeeProjectsFactory" />
+        <entry key="norm.dao.poc.dao_model.department.DepartmentFactory" value-ref = "departmentFactory" />
+        <entry key="norm.dao.poc.dao_model.employee.EmployeeSmallFactory" value-ref = "employeeFactorySmall" />
+        <entry key="norm.dao.poc.dao_model.employee.EmployeeLargeFactory" value-ref = "employeeFactoryLarge" />
+    </util:map>
+    <bean id="factoriesRegistry" class="norm.dao.FactoriesRegistryBean">
+        <property name="factoriesRegistryMap" ref="factoriesRegistryMap"/>
+    </bean>
+
+    <!-- Demo Class -->
+    <bean id="demo" class="norm.dao.poc.dao_model.Demo"/>
+
+</beans>

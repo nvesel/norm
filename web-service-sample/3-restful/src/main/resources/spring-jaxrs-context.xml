@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <import resource="classpath:spring-service-context.xml"/>
+
+    <!--<context:property-placeholder location="classpath:jaxrs.properties" order="3"/>-->
+    <bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:jaxrs.properties</value>
+            </list>
+        </property>
+        <property name="order" value="3"/>
+        <property name="ignoreUnresolvablePlaceholders" value="false"/>
+        <property name="localOverride" value="true"/>
+    </bean>
+
+    <context:component-scan base-package="norm.dao.poc.jaxrs"/>
+
+    <bean id="employeeManagementResource" class="norm.dao.poc.jaxrs.resource.EmployeeManagementRemoteService" scope="request"/>
+</beans>

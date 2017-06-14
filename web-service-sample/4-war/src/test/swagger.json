@@ -1,0 +1,326 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1",
+    "title": "Norm DAO Usage"
+  },
+  "basePath": "/employee-management-sample-0.0.1/api",
+  "tags": [
+    {
+      "name": "empl"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/empl": {
+      "post": {
+        "tags": [
+          "empl"
+        ],
+        "summary": "AddEmployee",
+        "description": "Add a New Employee",
+        "operationId": "addEmployee",
+        "consumes": [
+          "application/json",
+          "application/xml"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Employee Small",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/EmployeeSmall"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HOORAY!",
+            "schema": {
+              "$ref": "#/definitions/SucessResponse"
+            }
+          },
+          "400": {
+            "description": "AH YOU!",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ValidationError"
+              }
+            }
+          },
+          "500": {
+            "description": "OH, SNAP!",
+            "schema": {
+              "$ref": "#/definitions/GeneralError"
+            }
+          }
+        }
+      }
+    },
+    "/empl/{emplId}": {
+      "get": {
+        "tags": [
+          "empl"
+        ],
+        "summary": "GetEmployeeById",
+        "description": "Get Employee by ID",
+        "operationId": "getEmployeeById",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json",
+          "application/xml"
+        ],
+        "parameters": [
+          {
+            "name": "emplId",
+            "in": "path",
+            "description": "Employee Id",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HOORAY!",
+            "schema": {
+              "$ref": "#/definitions/EmployeeSmall"
+            }
+          },
+          "400": {
+            "description": "AH YOU!",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ValidationError"
+              }
+            }
+          },
+          "500": {
+            "description": "OH, SNAP!",
+            "schema": {
+              "$ref": "#/definitions/GeneralError"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "empl"
+        ],
+        "summary": "PatchEmployee",
+        "description": "Update an Employee",
+        "operationId": "patchEmployee",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "emplId",
+            "in": "path",
+            "description": "Employee Id",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Employee Small",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/EmployeeSmall"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HOORAY!",
+            "schema": {
+              "$ref": "#/definitions/EmployeeSmall"
+            }
+          },
+          "400": {
+            "description": "AH YOU!",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ValidationError"
+              }
+            }
+          },
+          "500": {
+            "description": "OH, SNAP!",
+            "schema": {
+              "$ref": "#/definitions/GeneralError"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "SuccessResponse": {
+      "type": "object",
+      "properties": {
+        "links": {
+          "type": "array",
+          "xml": {
+            "name": "link",
+            "namespace": "http://www.w3.org/2005/Atom"
+          },
+          "readOnly": true,
+          "items": {
+            "$ref": "#/definitions/Link"
+          }
+        }
+      }
+    },
+    "Department": {
+      "type": "object",
+      "required": [
+        "name",
+        "pk"
+      ],
+      "properties": {
+        "pk": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "[\\w ]+"
+        },
+        "links": {
+          "type": "array",
+          "xml": {
+            "name": "link",
+            "namespace": "http://www.w3.org/2005/Atom"
+          },
+          "readOnly": true,
+          "items": {
+            "$ref": "#/definitions/Link"
+          }
+        }
+      }
+    },
+    "EmployeeSmall": {
+      "type": "object",
+      "required": [
+        "name",
+        "ssn"
+      ],
+      "properties": {
+        "pk": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "[\\w ]+"
+        },
+        "ssn": {
+          "type": "string",
+          "pattern": "[0-9\\-]+"
+        },
+        "department": {
+          "$ref": "#/definitions/Department"
+        },
+        "links": {
+          "type": "array",
+          "xml": {
+            "name": "link",
+            "namespace": "http://www.w3.org/2005/Atom"
+          },
+          "readOnly": true,
+          "items": {
+            "$ref": "#/definitions/Link"
+          }
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "ValidationError": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "messageCode": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "invalidValue": {
+          "type": "object"
+        },
+        "links": {
+          "type": "array",
+          "xml": {
+            "name": "link",
+            "namespace": "http://www.w3.org/2005/Atom"
+          },
+          "readOnly": true,
+          "items": {
+            "$ref": "#/definitions/Link"
+          }
+        }
+      }
+    },
+    "GeneralError": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "messageCode": {
+          "type": "string"
+        },
+        "links": {
+          "type": "array",
+          "xml": {
+            "name": "link",
+            "namespace": "http://www.w3.org/2005/Atom"
+          },
+          "readOnly": true,
+          "items": {
+            "$ref": "#/definitions/Link"
+          }
+        }
+      }
+    },
+    "Link": {
+      "type": "object",
+      "properties": {
+        "rel": {
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        },
+        "href": {
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        }
+      }
+    }
+  }
+}

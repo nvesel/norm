@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+
+<!-- Setup the SQL environment:
+    CREATE LOGIN [dao_demo] WITH PASSWORD = 'password123';
+    GO
+    CREATE DATABASE [DaoDemo];
+    GO
+    USE [DaoDemo]
+    GO
+    CREATE USER [dao_demo] FOR LOGIN [dao_demo]
+    ALTER USER [dao_demo] WITH DEFAULT_SCHEMA=[dao]
+    GO
+    CREATE SCHEMA [dao] AUTHORIZATION [dao_demo]
+    GO
+    ALTER ROLE [db_owner] ADD MEMBER [dao_demo]
+-->
+
+<properties>
+    <!--Batch keys should obey the following format batch.MAJOR_VER.MINOR_VER.SORT_ORDER_ID -->
+    <entry key="batch.0.0.100"><![CDATA[
+        /*the schema must exists*/
+        if not exists (select * from sys.schemas where name = 'dao')
+            raiserror('dao schema does not exist',16,1)
+    ]]></entry>
+    <entry key="batch.0.0.200"><![CDATA[
+        IF OBJECT_ID('[dao].[EmployeeProjects]','U') > 0 DROP TABLE [dao].[EmployeeProjects]
+        IF OBJECT_ID('[dao].[EmployeeLog]','U') > 0 DROP TABLE [dao].[EmployeeLog]
+        IF OBJECT_ID('[dao].[Employee]','U') > 0 DROP TABLE [dao].[Employee]
+        IF OBJECT_ID('[dao].[Project]','U') > 0 DROP TABLE [dao].[Project]
+        IF OBJECT_ID('[dao].[Department]','U') > 0 DROP TABLE [dao].[Department]
+        IF OBJECT_ID('[dao].[Person]','U') > 0 DROP TABLE [dao].[Person]
+    ]]></entry>
+    <entry key="batch.0.0.300"><![CDATA[
+        CREATE TABLE [dao].[Person] (
+            [__created_ts] datetime2 NOT NULL DEFAULT GETDATE(),
+            [__revision] [int] NOT NULL DEFAULT 0,
+            [id] [int] IDENTITY(1,1) NOT NULL,
+            [name] [varchar](50) NOT NULL,
+            [SSN] [varchar](50) NOT NULL,
+            [LastMod] [datetime] NULL,
+            CONSTRAINT [PK_Person] PRIMARY KEY CLUSTERED ([id] ASC)
+        )
+    ]]></entry>
+    <entry key="batch.0.0.400"><![CDATA[
+        CREATE TABLE [dao].[Department] (
+            [__created_ts] datetime2 NOT NULL DEFAULT GETDATE(),
+            [__revision] [int] NOT NULL DEFAULT 0,
+            [id] [int] IDENTITY(1,1) NOT NULL,
+            [name] [varchar](50) NULL,
+            CONSTRAINT [PK_Department] PRIMARY KEY CLUSTERED ([id] ASC)
+        )
+    ]]></entry>
+    <entry key="batch.0.0.500"><![CDATA[
+        CREATE TABLE [dao].[Project] (
+            [__created_ts] datetime2 NOT NULL DEFAULT GETDATE(),
+            [__revision] [int] NOT NULL DEFAULT 0,
+            [id] [int] IDENTITY(1,1) NOT NULL,
+            [name] [varchar](50) NULL,
+         CONSTRAINT [PK_Project] PRIMARY KEY CLUSTERED ([id] ASC)
+        )
+    ]]></entry>
+    <entry key="batch.0.0.600"><![CDATA[
+        CREATE TABLE [dao].[Employee] (
+            [__created_ts] datetime2 NOT NULL DEFAULT GETDATE(),
+            [__revision] [int] NOT NULL DEFAULT 0,
+            [id] [int] IDENTITY(1,1) NOT NULL,
+            [person_id] [int] NOT NULL,
+            [department_id] [int] NOT NULL,
+            [start_date] [date] NULL,
+            [end_date] [date] NULL,
+            [title] [varchar](50) NULL,
+            [manager_id] [int] NULL,
+            CONSTRAINT [PK_Employee] PRIMARY KEY CLUSTERED ([id] ASC)
+        )
+        ALTER TABLE [dao].[Employee]  WITH CHECK ADD  CONSTRAINT [FK_Employee_Department] FOREIGN KEY([department_id]) REFERENCES [dao].[Department] ([id])
+        ALTER TABLE [dao].[Employee]  WITH CHECK ADD  CONSTRAINT [FK_Employee_Employee] FOREIGN KEY([manager_id]) REFERENCES [dao].[Employee] ([id])
+        ALTER TABLE [dao].[Employee]  WITH CHECK ADD  CONSTRAINT [FK_Employee_Person] FOREIGN KEY([person_id]) REFERENCES [dao].[Person] ([id])
+    ]]></entry>
+    <entry key="batch.0.0.700"><![CDATA[
+        CREATE TABLE [dao].[EmployeeLog] (
+            [__created_ts] datetime2 NOT NULL DEFAULT GETDATE(),
+            [__revision] [int] NOT NULL DEFAULT 0,
+            [employee_id] [int] NOT NULL,
+            [ts] [datetime] NOT NULL DEFAULT GETDATE(),
+            [description] [varchar](50) NOT NULL,
+            CONSTRAINT [PK_EmployeeLog] PRIMARY KEY CLUSTERED ([employee_id] ASC, [ts] ASC)
+        )
+        ALTER TABLE [dao].[EmployeeLog]  WITH CHECK ADD  CONSTRAINT [FK_EmployeeLog_Employee] FOREIGN KEY([employee_id]) REFERENCES [dao].[Employee] ([id])
+    ]]></entry>
+    <entry key="batch.0.0.800"><![CDATA[
+        CREATE TABLE [dao].[EmployeeProjects](
+            [__created_ts] datetime2 NOT NULL DEFAULT GETDATE(),
+            [__revision] [int] NOT NULL DEFAULT 0,
+            [employee_id] [int] NOT NULL,
+            [project_id] [int] NOT NULL,
+            CONSTRAINT [PK_EmployeeProjects] PRIMARY KEY CLUSTERED ([employee_id] ASC, [project_id] ASC)
+        )
+        ALTER TABLE [dao].[EmployeeProjects]  WITH CHECK ADD  CONSTRAINT [FK_EmployeeProjects_Employee] FOREIGN KEY([employee_id]) REFERENCES [dao].[Employee] ([id])
+        ALTER TABLE [dao].[EmployeeProjects]  WITH CHECK ADD  CONSTRAINT [FK_EmployeeProjects_Project] FOREIGN KEY([project_id]) REFERENCES [dao].[Project] ([id])
+    ]]></entry>
+    <entry key="batch.0.0.810"><![CDATA[
+        IF OBJECT_ID (N'sp_getEmployeeAndManagerAtOnce',N'P') IS NOT NULL DROP PROCEDURE sp_getEmployeeAndManagerAtOnce;
+    ]]></entry>
+    <entry key="batch.0.0.811"><![CDATA[
+        CREATE PROCEDURE sp_getEmployeeAndManagerAtOnce
+            @emplId int
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            select
+                e.id as employee_id/*<!id!>*/,
+                p.name/*<!name!>*/,
+                p.ssn/*<!ssn!>*/,
+                d.id as department_id/*<!department.id!>*/,
+                e.start_date/*<!startDate!>*/,
+                d.name as department_name/*<!department.name!>*/,
+                e.title/*<!title!>*/,
+                m.id as manager_id/*<!manager.id!>*/,
+                mp.name as manager_name/*<!manager.name!>*/,
+                mp.ssn as manager_ssn/*<!manager.ssn!>*/,
+                m.title as manager_title/*<!manager.title!>*/,
+                md.id as manager_department_id/*<!manager.department.id!>*/,
+                md.name as manager_department_name/*<!manager.department.name!>*/
+            from dao.Employee e
+            inner join dao.Person p
+                on p.id = e.person_id
+            inner join dao.Department d
+                on d.id = e.department_id
+            left join dao.Employee m
+                on m.id = e.manager_id
+            left join dao.Person mp
+                on mp.id = m.person_id
+            left join dao.Department md
+                on md.id = m.department_id
+            where e.id = @emplId
+        END
+    ]]></entry>
+    <entry key="batch.0.0.900"><![CDATA[
+        INSERT INTO [dao].[Person] ([name],[SSN]) VALUES ('Person One','123-1111'),('Person Two','234-2222'),('Person Three','345-3333'),('Person Four','456-4444'),('Person Five','567-5555'),('Person Six','678-6666')
+
+        INSERT INTO [dao].[Department] ([name]) VALUES ('Dep1'),('Dep2'),('Dep3'),('Dep4'),('Dep5')
+
+        INSERT INTO [dao].[Project] ([name]) VALUES ('Project1'),('Project2'),('Project3'),('Project4'),('Project5')
+
+        INSERT INTO [dao].[Employee] ([person_id],[department_id],[start_date],[end_date],[title],[manager_id]) VALUES (1,3,'2011-01-01',null,'The Boss',null)
+        INSERT INTO [dao].[Employee] ([person_id],[department_id],[start_date],[end_date],[title],[manager_id]) VALUES (2,2,'2011-01-01','2012-01-01','Engineer1',1),(1,3,'2012-01-01',null,'Engineer2',1)
+        INSERT INTO [dao].[Employee] ([person_id],[department_id],[start_date],[end_date],[title],[manager_id]) VALUES (3,2,'2011-02-01','2012-02-01','Engineer Term',1)
+
+        INSERT INTO [dao].[EmployeeLog] ([employee_id],[ts],[description]) VALUES (2,'2012-01-01 01:02:03','Arrived on time'),(2,'2012-01-02 01:02:03','Arrived on time'),(2,'2012-01-03 01:02:03','Arrived on time'),(2,'2012-01-04 01:02:03','Arrived on time'),(2,'2012-01-05 01:02:03','Arrived on time')
+        INSERT INTO [dao].[EmployeeLog] ([employee_id],[ts],[description]) VALUES (3,'2012-01-01 01:02:03','Arrived late'),(3,'2012-01-05 01:02:03','Arrived late')
+        INSERT INTO [dao].[EmployeeLog] ([employee_id],[ts],[description]) VALUES (4,'2012-01-01 01:02:03','Arrived late'),(4,'2012-01-04 01:02:03','Arrived late'),(4,'2012-01-05 01:02:03','Arrived on time')
+
+        INSERT INTO [dao].[EmployeeProjects] ([employee_id],[project_id]) VALUES (2,3),(2,4),(3,1),(3,3),(3,4),(4,1)
+    ]]></entry>
+
+    <!-- //Instead of __revision and __created_ts we could use Change Tracking feature of MS SQL (if...)
+    <entry key="batch.1.0.100"><![CDATA[
+        ALTER DATABASE [DaoDemo] SET CHANGE_TRACKING = ON (CHANGE_RETENTION = 2 DAYS, AUTO_CLEANUP = ON)
+    ]]></entry>
+    <entry key="batch.1.0.110"><![CDATA[
+        declare @sql varchar(max) = 'ALTER DATABASE '+db_name()+' SET CHANGE_TRACKING = ON (CHANGE_RETENTION = 2 DAYS, AUTO_CLEANUP = ON)'
+        if not exists (select * from master.sys.change_tracking_databases where database_id = DB_ID())
+            exec(@sql)
+    ]]></entry>
+    <entry key="batch.1.0.120"><![CDATA[
+        if not exists (select * from sys.change_tracking_tables where object_id = object_id('[dao].[Employee]'))
+            ALTER TABLE [dao].[Employee] ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = ON)
+    ]]></entry>
+    <entry key="batch.1.0.130"><![CDATA[
+        if not exists (select * from sys.change_tracking_tables where object_id = object_id('[dao].[Person]'))
+            ALTER TABLE [dao].[Person] ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = ON)
+    ]]></entry>-->
+
+</properties>
