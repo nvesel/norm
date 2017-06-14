@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <!--Fetch queries:-->
+    <entry key="getAllPersons"><![CDATA[
+        select
+            p.__revision/*<!__revision!>*/,
+            p.id/*<!id!>*/,
+            p.name/*<!name!>*/
+        from Person p
+    ]]></entry>
+    <entry key="getPersonById"><![CDATA[
+        ${getAllPersons}
+        where p.id = :pid
+    ]]></entry>
+    <entry key="getFullPersonById"><![CDATA[
+        select
+            p.__revision/*<!__revision!>*/,
+            p.id/*<!id!>*/,
+            p.name/*<!name!>*/,
+            p.parent_person as parent_id/*<!parent.id!>*/,
+            pp.name as parent_name/*<!parent.name!>*/
+        from Person p
+        left join Person pp
+            on pp.id = p.parent_person
+        where p.id = :pid
+    ]]></entry>
+    <!--Persist queries (note the different format!):-->
+    <entry key="updatePerson"><![CDATA[
+        select
+            p.__revision/*RES:<__revision><><INPUT>*/,
+            id/*RES:<id><><OUTPUT>*/, -- some DB engines require the PK in the RS when for updating.
+            p.name/*RES:<name><><INPUT>*/,
+            p.parent_person/*RES:<parent><norm.dao.model.PersonDAO:getId><INPUT>*/,
+            p.last_mod_ts/*RES:<><norm.dao.Utils:getCurrentTime><INPUT>*/ -- timestamp with the application server time!
+        from Person p
+        where p.id = ?/*COND:<id><>*/
+        FOR UPDATE -- with each DB engine is different, but we have to lock only the record we will be editing.
+    ]]></entry>
+    <entry key="mergeInsertPerson"><![CDATA[
+        select
+            p.__revision/*RES:<__revision><><INPUT>*/,
+            id/*RES:<id><><OUTPUT>*/,
+            p.name/*RES:<name><><INPUT>*/,
+            p.parent_person/*RES:<parent><norm.dao.model.PersonDAO:getId><INPUT>*/
+        from Person p
+        where p.name = ?/*COND:<name><>*/
+    ]]></entry>
+    <entry key="newPerson"><![CDATA[
+        select
+            p.__revision/*RES:<__revision><><INPUT>*/,
+            id/*RES:<id><><OUTPUT>*/,
+            p.name/*RES:<name><><INPUT>*/,
+            p.parent_person/*RES:<parent><norm.dao.model.PersonDAO:getId><INPUT>*/
+        from Person p
+        where p.id = -1 -- the fastest possible result is none
+    ]]></entry>
+</properties>
